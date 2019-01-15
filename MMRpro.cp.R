@@ -509,7 +509,7 @@ MMRpro.cp <- function(family, counselee.id=1, race = "Unknown", germline.testing
   
   if (missingage & imputeAges==TRUE){
     agewarning = "Warning: Unknown ages of some unaffected and affected family members have been imputed.  You may want to get more information about family member ages and re-run the calculation."
-    ifamily = ImputeAge(fff=family, params=params, model="MMRpro") #ImputeAge is run only once and returns a matrix of nIter possible affection ages
+    ifamily = ImputeAge.cp(fff=family, params=params, model="MMRpro") #ImputeAge is run only once and returns a matrix of nIter possible affection ages
     nIter = params$nIter
     postList <- array(NA, c(nrow(family), ngen, nIter))
     
