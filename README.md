@@ -11,8 +11,6 @@ In order to reproduce the results, run the following three files that correspond
 * OE_Sim_Frailty_C.R : frailty on only mutation carriers
 * OE_Sim_Frailty_NC.R : frailty on only mutation non-carriers
     
-Note that running the code requires the BayesMendel R package, which can be found at https://projects.iq.harvard.edu/bayesmendel/bayesmendel-r-package.
-    
 ## The files are all described below:
 
 ### General files
