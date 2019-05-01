@@ -1,10 +1,11 @@
 ## OE Simulation for Frailty Analysis
-## Last updated: January 15, 2019
+## Last updated: May 1, 2019
 
 library(dplyr)
 library(ggplot2)
+library(gridExtra)
 
-dir.meet <- "/Users/Theo/Documents/Harvard/Research with Giovanni Parmigiani/Meetings/2019/BM 010419"
+dir.meet <- "/Users/Theo/Documents/Harvard/Research with Giovanni Parmigiani/Meetings/2019/BM 011819"
 
 nboot <- 20
 w.list <- seq(-2, 2, 0.1)
@@ -86,20 +87,39 @@ names(res.oe.mean.nc) <- cnames
 
 
 ## median
-res.oe.med <- matrix(NA, length(w.list), length(cnames))
+res.oe.med.cnc <- matrix(NA, length(w.list), length(cnames))
 for(i in 1:length(w.list)){
   for(j in 1:length(cnames)){
-    res.oe.med[i, j] <- median(res.oe.tot[, i, j])
+    res.oe.med.cnc[i, j] <- median(res.oe.cnc[, i, j])
   }
 }
-res.oe.med <- data.frame(res.oe.med)
-names(res.oe.med) <- cnames
+res.oe.med.cnc <- data.frame(res.oe.med.cnc)
+names(res.oe.med.cnc) <- cnames
+
+res.oe.med.c <- matrix(NA, length(w.list), length(cnames))
+for(i in 1:length(w.list)){
+  for(j in 1:length(cnames)){
+    res.oe.med.c[i, j] <- median(res.oe.c[, i, j])
+  }
+}
+res.oe.med.c <- data.frame(res.oe.med.c)
+names(res.oe.med.c) <- cnames
+
+res.oe.med.nc <- matrix(NA, length(w.list), length(cnames))
+for(i in 1:length(w.list)){
+  for(j in 1:length(cnames)){
+    res.oe.med.nc[i, j] <- median(res.oe.nc[, i, j])
+  }
+}
+res.oe.med.nc <- data.frame(res.oe.med.nc)
+names(res.oe.med.nc) <- cnames
+
 
 ## variances
 res.oe.var <- matrix(NA, length(w.list), length(cnames))
 for(i in 1:length(w.list)){
   for(j in 1:length(cnames)){
-    res.oe.var[i, j] <- var(res.oe.tot[, i, j])
+    res.oe.var[i, j] <- var(res.oe.cnc[, i, j])
   }
 }
 res.oe.var <- data.frame(res.oe.var)
@@ -121,174 +141,149 @@ get_plot_limits <- function(plot) {
 
 #### Frailty on both carriers and non-carriers
 
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cp.png", sep = ""))
 p <- ggplot(res.oe.mean.cnc, aes(OE.C.cp, OE.NC.cp)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on both carriers and non-carriers, Carrier probs") +
+  labs(x = "", y = "", title = "A") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.cnc.cp <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-# dev.off()
+# ggsave(paste(dir.meet, "/plot_mean_cnc_cp.png", sep = ""))
 
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cpnocens.png", sep = ""))
 p <- ggplot(res.oe.mean.cnc, aes(OE.C.cp.nocens, OE.NC.cp.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on both carriers and non-carriers, Carrier probs, No Censoring") +
+  labs(x = "", y = "", title = "B") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.cnc.cp.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-# dev.off()
+# ggsave(paste(dir.meet, "/plot_mean_cnc_cp_nocens.png", sep = ""))
 
 p <- ggplot(res.oe.mean.cnc, aes(OE.C, OE.NC)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on both carriers and non-carriers") +
+  labs(x = "", y = "", title = "C") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.cnc <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-
+# ggsave(paste(dir.meet, "/plot_mean_cnc.png", sep = ""))
 
 p <- ggplot(res.oe.mean.cnc, aes(OE.C.nocens, OE.NC.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on both carriers and non-carriers, No Censoring") +
+  labs(x = "", y = "", title = "D") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.cnc.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-
+# ggsave(paste(dir.meet, "/plot_mean_cnc_nocens.png", sep = ""))
 
 
 #### Frailty on carriers only
 
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cp.png", sep = ""))
 p <- ggplot(res.oe.mean.c, aes(OE.C.cp, OE.NC.cp)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on carriers only, Carrier probs") +
+  labs(x = "", y = "", title = "E") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.c.cp <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
+# ggsave(paste(dir.meet, "/plot_mean_c_cp.png", sep = ""))
 
-# dev.off()
-
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cpnocens.png", sep = ""))
 p <- ggplot(res.oe.mean.c, aes(OE.C.cp.nocens, OE.NC.cp.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on carriers only, Carrier probs, No Censoring") +
+  labs(x = "", y = "", title = "F") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.c.cp.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-# dev.off()
+# ggsave(paste(dir.meet, "/plot_mean_c_cp_nocens.png", sep = ""))
 
 p <- ggplot(res.oe.mean.c, aes(OE.C, OE.NC)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on carriers only") +
+  labs(x = "", y = "", title = "G") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.c <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-
+# ggsave(paste(dir.meet, "/plot_mean_c.png", sep = ""))
 
 p <- ggplot(res.oe.mean.c, aes(OE.C.nocens, OE.NC.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on carriers only, No Censoring") +
+  labs(x = "", y = "", title = "H") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.c.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-
+# ggsave(paste(dir.meet, "/plot_mean_c_nocens.png", sep = ""))
 
 
 #### Frailty on non-carriers only
 
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cp.png", sep = ""))
 p <- ggplot(res.oe.mean.nc, aes(OE.C.cp, OE.NC.cp)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on non-carriers only, Carrier probs") +
+  labs(x = "", y = "", title = "I") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.nc.cp <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-# dev.off()
+# ggsave(paste(dir.meet, "/plot_mean_nc_cp.png", sep = ""))
 
-# png(filename = paste(dir.meet, "/plot_mean_cnc_cpnocens.png", sep = ""))
 p <- ggplot(res.oe.mean.nc, aes(OE.C.cp.nocens, OE.NC.cp.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on non-carriers only, Carrier probs, No Censoring") +
+  labs(x = "", y = "", title = "J") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.nc.cp.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-# dev.off()
+# ggsave(paste(dir.meet, "/plot_mean_nc_cp_nocens.png", sep = ""))
 
 p <- ggplot(res.oe.mean.nc, aes(OE.C, OE.NC)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on non-carriers only") +
+  labs(x = "", y = "", title = "K") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.nc <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
-
+# ggsave(paste(dir.meet, "/plot_mean_nc.png", sep = ""))
 
 p <- ggplot(res.oe.mean.nc, aes(OE.C.nocens, OE.NC.nocens)) +
   geom_point(aes(color = W)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
   geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(x = "Mean O/E for carriers",
-       y = "Mean O/E for non-carriers",
-       title = "Frailty on non-carriers only, No Censoring") +
+  labs(x = "", y = "", title = "L") +
   theme(plot.title = element_text(hjust = 0.5))
-p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
+p.nc.nocens <- p + scale_x_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p)))) +
   scale_y_continuous(limits = c(min(get_plot_limits(p)), max(get_plot_limits(p))))
+# ggsave(paste(dir.meet, "/plot_mean_nc_nocens.png", sep = ""))
 
+
+grid.arrange(p.cnc.cp, p.cnc.cp.nocens, p.cnc, p.cnc.nocens,
+             p.c.cp, p.c.cp.nocens, p.c, p.c.nocens,
+             p.nc.cp, p.nc.cp.nocens, p.nc, p.nc.nocens,
+             ncol = 4)
 
 
 
