@@ -6,15 +6,20 @@ rm(list = ls())
 a1 <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
 set.seed(999 + a1)
 
-library(BayesMendel)
 library(dplyr)
 library(abind)
+
+## loading BayesMendel colorectal and endometrial cancer penetrances and
+## hazard for death from other causes
+load("penet.mmr.net.RData")
+load("death.othercauses.RData")
 
 source("OE Functions.R")
 source("Estimating Functions Discrete.R")
 
 source(paste(getwd(), "/Generating Families Functions/sim.simFam.R", sep = ""))
 source(paste(getwd(), "/Generating Families Functions/genCancerPen.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/genOtherDeathPen.R", sep = ""))
 source(paste(getwd(), "/Generating Families Functions/sim.buildGenoMat.R", sep = ""))
 source(paste(getwd(), "/Generating Families Functions/sim.linkParents.R", sep = ""))
 source(paste(getwd(), "/Generating Families Functions/sim.simCurAgeVar.R", sep = ""))
