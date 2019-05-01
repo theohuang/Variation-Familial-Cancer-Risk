@@ -1,5 +1,5 @@
 ## O/E Functions
-## Last updated: January 3, 2019
+## Last updated: April 3, 2019
 
 expect <- function(fam, penet.m, penet.f){
   ex <- matrix(NA, nrow(fam), ncol(penet.m))
@@ -53,6 +53,9 @@ observe <- function(fam, penet.m, penet.f){
 fam.new <- function(fam){
   dat.new <- fam
   rel <- dat.new$Relation
+  mlh1 <- dat.new$MLH1
+  msh2 <- dat.new$MSH2
+  msh6 <- dat.new$MSH6
   id.rel <- dat.new$ID
   id.pro <- dat.new$ID[dat.new$Relation == 1]
   dat.new$ethnic <- rep("Lynch", nrow(fam))
@@ -69,11 +72,14 @@ fam.new <- function(fam){
   ## Here we add them back in because they are used in the estimating equation function
   ## and in brcapro
   dat.new$Relation <- 999; dat.new$Relation[dat.new$ID %in% id.rel] <- rel
+  dat.new$MLH1 <- 0; dat.new$MLH1[dat.new$ID %in% id.rel] <- mlh1
+  dat.new$MSH2 <- 0; dat.new$MSH2[dat.new$ID %in% id.rel] <- msh2
+  dat.new$MSH6 <- 0; dat.new$MSH6[dat.new$ID %in% id.rel] <- msh6
   return(dat.new)
 }
 
 
-oe.boot.cp <- function(fam, penet.m, penet.f, nboot, seed = NULL){
+oe.boot.cp <- function(fam, penet.m, penet.f, nboot, seed = NULL, gt = FALSE){
   ## bootstrapping where we obtain the carrier probabilities for each
   ## bootstrap replicate of the family
   if(!is.null(seed)){
@@ -97,7 +103,13 @@ oe.boot.cp <- function(fam, penet.m, penet.f, nboot, seed = NULL){
                        MLH1 = ifelse(which.nsmp, 0, MLH1),
                        MSH2 = ifelse(which.nsmp, 0, MSH2),
                        MSH6 = ifelse(which.nsmp, 0, MSH6))
-    cp.boot <- MMRpro.cp(fam.boot, fam.boot$ID[1])
+    if(gt == FALSE){
+      cp.boot <- MMRpro.cp(fam.boot, fam.boot$ID[1])
+    } else{
+      cp.boot <- MMRpro.cp(fam.boot, fam.boot$ID[1],
+                           germline.testing = mutate(select(fam.boot, MLH1, MSH2, MSH6),
+                                                     TestOrder = 0))
+    }
     res.exp.boot <- expect(fam.boot, penet.m, penet.f)
     res.obs.boot <- observe(fam.boot, penet.m, penet.f)
     res.eo[i, ] <- c(fam$Famid[1],
@@ -110,14 +122,20 @@ oe.boot.cp <- function(fam, penet.m, penet.f, nboot, seed = NULL){
 }
 
 
-oe.boot <- function(fam, penet.m, penet.f, nboot, seed = NULL){
+oe.boot <- function(fam, penet.m, penet.f, nboot, seed = NULL, gt = FALSE){
   ## bootstrapping where we only obtain the carrier probabilities once
   if(!is.null(seed)){
     set.seed(seed)
   }
   
   # getting the carrier probabilities
-  cp <- MMRpro.cp(fam, filter(fam, Relation == 1)$ID)
+  if(gt == FALSE){
+    cp <- MMRpro.cp(fam, filter(fam, Relation == 1)$ID)
+  } else{
+    cp <- MMRpro.cp(fam, filter(fam, Relation == 1)$ID,
+                    germline.testing = mutate(select(fam, MLH1, MSH2, MSH6),
+                                              TestOrder = 0))
+  }
   
   res.oe <- setNames(data.frame(matrix(NA, nboot, 5)),
                      c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC"))

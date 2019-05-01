@@ -1,17 +1,26 @@
 ## Simulation for O/E ratios for a frailty model
 ## Frailties on only carriers
-## Last updated: January 14, 2019
+## Last updated: May 1, 2019
 
 rm(list = ls())
 a1 <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
 set.seed(999 + a1)
 
-library(BMmultigene)
 library(BayesMendel)
 library(dplyr)
+library(abind)
 
 source("OE Functions.R")
 source("Estimating Functions Discrete.R")
+
+source(paste(getwd(), "/Generating Families Functions/sim.simFam.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/genCancerPen.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/sim.buildGenoMat.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/sim.linkParents.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/sim.simCurAgeVar.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/sim.simCancerVars.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/sim.buildBranchOfAlleleMats.R", sep = ""))
+source(paste(getwd(), "/Generating Families Functions/helpers.R", sep = ""))
 
 mutations <- c("MLH1", "MSH2", "MSH6")
 cancers <- c("ColorC", "EndomC")
@@ -85,6 +94,7 @@ for(k in 1:nboot){
     genoMat <- select(fam0, MLH1, MSH2, MSH6)
     if(sum(genoMat) > 0) break
   }
+  genderPro <- ifelse(filter(fam0, isProband == 1)$Gender == 1, "Male", "Female")
   geno <- rep(0, nrow(genoMat))
   for(i in 1:nrow(genoMat)){
     geno[i] <- ifelse(all(genoMat[i, ] == c(0, 0, 0)), 1,
@@ -111,7 +121,8 @@ for(k in 1:nboot){
     CP <- genCancerPen(mutations, cancers, penF, penM, maxK = length(mutations), age.last = 95)
     fam <- sim.simFam(nSibsPatern, nSibsMatern, nSibs, nGrandchild,
                       af, CP, includeGeno = TRUE, age.max = 94, age.min = 2,
-                      genoMat = genoMat, CurAge = fam0$CurAge, affTime = TRUE)
+                      genderPro = genderPro, genoMat = genoMat,
+                      CurAge = fam0$CurAge, affTime = TRUE)
     fam <- mutate(fam, AffectedColon = isAffColorC, AffectedEndometrium = isAffEndomC,
                   AgeColon = AgeColorC, AgeEndometrium = AgeEndomC)
     fams[[k]] <- fam
