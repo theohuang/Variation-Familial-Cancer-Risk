@@ -1,6 +1,7 @@
 ## Simulation for O/E ratios for a frailty model
+## Large samples
 ## Frailties on only carriers
-## Last updated: May 1, 2019
+## Last updated: July 16, 2020
 
 rm(list = ls())
 a1 <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))

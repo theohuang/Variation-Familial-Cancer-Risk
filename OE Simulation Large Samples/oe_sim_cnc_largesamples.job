@@ -9,4 +9,4 @@
 #SBATCH -N 1 #All cores on one machine
 
 
-R CMD BATCH OE_Sim_Frailty_CNC.R oesimfrailtycnc_${SLURM_ARRAY_TASK_ID}.Rout
+R CMD BATCH OE_Sim_Frailty_CNC_LargeSamples.R oesimfrailtycnc_${SLURM_ARRAY_TASK_ID}.Rout

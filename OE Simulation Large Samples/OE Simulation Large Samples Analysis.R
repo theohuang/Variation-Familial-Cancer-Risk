@@ -1,5 +1,5 @@
 ## OE Simulation for Frailty Analysis (large samples)
-## Last updated: July 6, 2020
+## Last updated: July 16, 2020
 
 library(dplyr)
 library(ggplot2)
@@ -22,7 +22,7 @@ cnames <- c("W", "O.C", "E.C", "OE.C", "O.NC", "E.NC", "OE.NC",
 res.oe.cnc <- array(NA, c(50 * nboot, length(w.list), length(cnames)))
 ct <- 0
 for(i in 1:50){
-  load(paste(getwd(), "/OE Simulation/Both/oe_sim_cnc_", i, ".RData", sep = ""))
+  load(paste(getwd(), "/Both/oe_sim_cnc_", i, ".RData", sep = ""))
   for(j in 1:20){
     ct <- ct + 1
     res.oe.cnc[ct, , ] <- as.matrix(res.oe[[j]])
@@ -33,7 +33,7 @@ for(i in 1:50){
 res.oe.c <- array(NA, c(50 * nboot, length(w.list), length(cnames)))
 ct <- 0
 for(i in 1:50){
-  load(paste(getwd(), "/OE Simulation/Carriers/oe_sim_c_", i, ".RData", sep = ""))
+  load(paste(getwd(), "/Carriers/oe_sim_c_", i, ".RData", sep = ""))
   for(j in 1:20){
     ct <- ct + 1
     res.oe.c[ct, , ] <- as.matrix(res.oe[[j]])
@@ -44,7 +44,7 @@ for(i in 1:50){
 res.oe.nc <- array(NA, c(50 * nboot, length(w.list), length(cnames)))
 ct <- 0
 for(i in 1:50){
-  load(paste(getwd(), "/OE Simulation/NonCarriers/oe_sim_nc_", i, ".RData", sep = ""))
+  load(paste(getwd(), "/NonCarriers/oe_sim_nc_", i, ".RData", sep = ""))
   for(j in 1:20){
     ct <- ct + 1
     res.oe.nc[ct, , ] <- as.matrix(res.oe[[j]])

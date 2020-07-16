@@ -1,6 +1,7 @@
 ## Simulation for O/E ratios for a frailty model
-## Frailties on both carriers and non-carriers
-## Last updated: May 1, 2019
+## Large samples
+## Frailties on only non-carriers
+## Last updated: July 16, 2020
 
 rm(list = ls())
 a1 <- as.integer(Sys.getenv('SLURM_ARRAY_TASK_ID'))
@@ -118,9 +119,9 @@ for(k in 1:nboot){
                           cnames)
   res.oe[[k]]$W <- w.list
   for(i in 1:length(w.list)){
-    ## frailty only for colorectal cancer (both for carriers and non-carriers)
-    hzdF <- hzd0F; hzdF$ColorC <- hzd02hzd(hzd0F$ColorC, w = w.list[i])
-    hzdM <- hzd0M; hzdM$ColorC <- hzd02hzd(hzd0M$ColorC, w = w.list[i])
+    ## frailty only for colorectal cancer (and only non-carriers)
+    hzdF <- hzd0F; hzdF$ColorC[, 1] <- hzd02hzd(hzd0F$ColorC, w = w.list[i])[, 1]
+    hzdM <- hzd0M; hzdM$ColorC[, 1] <- hzd02hzd(hzd0M$ColorC, w = w.list[i])[, 1]
     penF <- lapply(hzdF, hzd2pen)
     penM <- lapply(hzdM, hzd2pen)
     CP <- genCancerPen(mutations, cancers, penF, penM, maxK = length(mutations), age.last = 95)
@@ -209,5 +210,5 @@ for(k in 1:nboot){
 difftime(Sys.time(), start, units = "secs")
 
 
-save(res.oe, fams, file = paste(getwd(), "/Extended Frailty/OE Simulation/Both/oe_sim_cnc_", a1, ".RData", sep = ""))
+save(res.oe, fams, file = paste(getwd(), "/Extended Frailty/OE Simulation/NonCarriers/oe_sim_nc_", a1, ".RData", sep = ""))
 
