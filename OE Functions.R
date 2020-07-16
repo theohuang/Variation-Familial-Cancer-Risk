@@ -1,5 +1,5 @@
 ## O/E Functions
-## Last updated: April 3, 2019
+## Last updated: June 29, 2020
 
 expect <- function(fam, penet.m, penet.f){
   ex <- matrix(NA, nrow(fam), ncol(penet.m))
@@ -155,5 +155,35 @@ oe.boot <- function(fam, penet.m, penet.f, nboot, seed = NULL, gt = FALSE){
   return(res.oe)
 }
 
-
+oe.boot.sim <- function(fam, CP0, ODP, af, mutations, nboot, seed = NULL){
+  ## bootstrapping where we only obtain the carrier probabilities once
+  if(!is.null(seed)){
+    set.seed(seed)
+  }
+  
+  # getting the carrier probabilities
+  LIK <- estLik(fam, CP0, ODP)
+  probs <- setNames(data.frame(matrix(0, nrow(fam), ncol(CP0$cancerFDens[, , 1]))),
+                    colnames(CP0$cancerFDens[, , 1]))
+  for(j in 1:nrow(fam)){
+    probs[j, ] <- pp.peelingParing(fam, af, LIK, length(mutations),
+                                   counselee.id = fam$ID[j])
+  }
+  
+  res.oe.boot <- setNames(data.frame(matrix(NA, nboot, 5)),
+                          c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC"))
+  for(i in 1:nboot){
+    ind.smp <- sample(1:nrow(fam), nrow(fam), replace = TRUE)
+    weights <- rep(0, nrow(fam))
+    weights[sort(unique(ind.smp))] <- table(ind.smp)
+    res.exp.boot <- expect(fam, CP0$cancerMDens[1:94, , "ColorC"], CP0$cancerFDens[1:94, , "ColorC"])
+    res.obs.boot <- observe(fam, CP0$cancerMDens[1:94, , "ColorC"], CP0$cancerFDens[1:94, , "ColorC"])
+    res.oe.boot[i, ] <- c(fam$FamID[1],
+                          sum(apply(res.obs.boot[, -1] * probs[, -1], 2, function(x) x * weights)),
+                          sum(apply(res.exp.boot[, -1] * probs[, -1], 2, function(x) x * weights)),
+                          sum(res.obs.boot[, 1] * probs[, 1] * weights),
+                          sum(res.exp.boot[, 1] * probs[, 1] * weights))
+  }
+  return(res.oe.boot)
+}
 

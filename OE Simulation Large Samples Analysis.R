@@ -1,4 +1,4 @@
-## OE Simulation for Frailty Analysis
+## OE Simulation for Frailty Analysis (large samples)
 ## Last updated: July 6, 2020
 
 library(dplyr)
