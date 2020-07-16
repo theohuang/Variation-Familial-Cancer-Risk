@@ -12,7 +12,7 @@ In order to reproduce the results for the main ("small samples") analysis, run t
 * OE_Sim_Frailty_NC_main.R : frailty on only mutation non-carriers
 * OE_Sim_Frailty_none_main.R : no frailty
 
-In order to reprodue the results for the "one-family-per-frailty" analysis, run "OE_Sim_Frailty_1fam.R".
+In order to reproduce the results for the "one-family-per-frailty" analysis, run "OE_Sim_Frailty_1fam.R".
 
 In order to reproduce the results for the "large samples" analysis, run the following three files that correspond to the three types of frailty models:
 
