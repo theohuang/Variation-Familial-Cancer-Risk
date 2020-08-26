@@ -1,5 +1,5 @@
 ## O/E Functions
-## Last updated: June 29, 2020
+## Last updated: August 10, 2020
 
 expect <- function(fam, penet.m, penet.f){
   ex <- matrix(NA, nrow(fam), ncol(penet.m))
@@ -137,8 +137,8 @@ oe.boot <- function(fam, penet.m, penet.f, nboot, seed = NULL, gt = FALSE){
                                               TestOrder = 0))
   }
   
-  res.oe <- setNames(data.frame(matrix(NA, nboot, 5)),
-                     c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC"))
+  res.oe <- setNames(data.frame(matrix(NA, nboot, 7)),
+                     c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC", "n.c", "n.nc"))
   for(i in 1:nboot){
     if(i %% 100 == 0) print(i)
     ind.smp <- sample(1:nrow(fam), nrow(fam), replace = TRUE)
@@ -150,7 +150,9 @@ oe.boot <- function(fam, penet.m, penet.f, nboot, seed = NULL, gt = FALSE){
                      sum(apply(res.obs.boot[, -1] * cp[, -1], 2, function(x) x * weights)),
                      sum(apply(res.exp.boot[, -1] * cp[, -1], 2, function(x) x * weights)),
                      sum(res.obs.boot[, 1] * cp[, 1] * weights),
-                     sum(res.exp.boot[, 1] * cp[, 1] * weights))
+                     sum(res.exp.boot[, 1] * cp[, 1] * weights),
+                     sum(sweep(cp[, -1], 1, weights, "*")),
+                     sum(cp[, 1] * weights))
   }
   return(res.oe)
 }
@@ -170,8 +172,8 @@ oe.boot.sim <- function(fam, CP0, ODP, af, mutations, nboot, seed = NULL){
                                    counselee.id = fam$ID[j])
   }
   
-  res.oe.boot <- setNames(data.frame(matrix(NA, nboot, 5)),
-                          c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC"))
+  res.oe.boot <- setNames(data.frame(matrix(NA, nboot, 7)),
+                          c("FamID", "Obs.C", "Exp.C", "Obs.NC", "Exp.NC", "n.c", "n.nc"))
   for(i in 1:nboot){
     ind.smp <- sample(1:nrow(fam), nrow(fam), replace = TRUE)
     weights <- rep(0, nrow(fam))
@@ -182,7 +184,9 @@ oe.boot.sim <- function(fam, CP0, ODP, af, mutations, nboot, seed = NULL){
                           sum(apply(res.obs.boot[, -1] * probs[, -1], 2, function(x) x * weights)),
                           sum(apply(res.exp.boot[, -1] * probs[, -1], 2, function(x) x * weights)),
                           sum(res.obs.boot[, 1] * probs[, 1] * weights),
-                          sum(res.exp.boot[, 1] * probs[, 1] * weights))
+                          sum(res.exp.boot[, 1] * probs[, 1] * weights),
+                          sum(sweep(probs[, -1], 1, weights, "*")),
+                          sum(probs[, 1] * weights))
   }
   return(res.oe.boot)
 }

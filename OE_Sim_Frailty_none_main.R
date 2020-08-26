@@ -1,6 +1,6 @@
 ## Simulation for O/E ratios for a frailty model
 ## No frailty
-## Last updated: July 1, 2020
+## Last updated: August 24, 2020
 
 rm(list = ls())
 
@@ -75,7 +75,7 @@ nfam <- 53; nfam.w <- 4
 fams <- vector("list", nfam)
 for(i in 1:nfam){fams[[i]] <- vector("list", nfam.w)}
 cnames <- c("FamID", "W", "O.C", "E.C", "OE.C", "O.NC", "E.NC",
-            "OE.NC", "OEdiff.C", "OEdiff.NC", "FamSize")
+            "OE.NC", "OEdiff.C", "OEdiff.NC", "n.c", "n.nc")
 res.oe.sim <- setNames(data.frame(matrix(0, nfam, length(cnames))), cnames)
 res.oe.sim$FamID <- 1:nfam
 
@@ -87,7 +87,7 @@ for(k in 1:nfam){
   ## getting "base" families (10 per frailty) to obtain genotypes and current ages
   # keep generating until we have a family with at least one carrier
   fam0 <- genoMat <- genderPro <- geno <- fam <- res.exp <-res.obs <- 
-    LIK <- probs <- vector("list", nfam.w)
+    LIK <- probs <- famsize <- vector("list", nfam.w)
   for(j in 1:nfam.w){
     nSibsPatern <- sample(1:4, 2, replace = TRUE)
     nSibsMatern <- sample(1:4, 2, replace = TRUE)
@@ -137,18 +137,21 @@ for(k in 1:nfam){
       probs[[j]][i, ] <- pp.peelingParing(fam[[j]], af, LIK[[j]], length(mutations),
                                           counselee.id = fam[[j]]$ID[i])
     }
+    famsize[[j]] <- setNames(c(sum(1 - probs[[j]]$none), sum(probs[[j]]$none)),
+                             c("c", "nc"))
   }
   
   ## combining the nfam.w families together
-  res.oe.sim$FamSize[k] <- mean(unlist(lapply(fam, nrow)))
+  res.oe.sim$n.c[k] <- mean(unlist(lapply(famsize, function(x) x[1])))
+  res.oe.sim$n.nc[k] <- mean(unlist(lapply(famsize, function(x) x[2])))
   res.oe.sim$O.C[k] <- mean(unlist(lapply(Map("*", res.obs, probs), function(x) sum(x[, -1]))))
   res.oe.sim$E.C[k] <- mean(unlist(lapply(Map("*", res.exp, probs), function(x) sum(x[, -1]))))
   res.oe.sim$O.NC[k] <- mean(unlist(lapply(Map("*", res.obs, probs), function(x) sum(x[, 1]))))
   res.oe.sim$E.NC[k] <- mean(unlist(lapply(Map("*", res.exp, probs), function(x) sum(x[, 1]))))
   res.oe.sim$OE.C[k] <- res.oe.sim$O.C[k] / res.oe.sim$E.C[k]
   res.oe.sim$OE.NC[k] <- res.oe.sim$O.NC[k] / res.oe.sim$E.NC[k]
-  res.oe.sim$OEdiff.C[k] <- (res.oe.sim$O.C[k] - res.oe.sim$E.C[k]) / res.oe.sim$FamSize[k]
-  res.oe.sim$OEdiff.NC[k] <- (res.oe.sim$O.NC[k] - res.oe.sim$E.NC[k]) / res.oe.sim$FamSize[k]
+  res.oe.sim$OEdiff.C[k] <- (res.oe.sim$O.C[k] - res.oe.sim$E.C[k]) / res.oe.sim$n.c[k]
+  res.oe.sim$OEdiff.NC[k] <- (res.oe.sim$O.NC[k] - res.oe.sim$E.NC[k]) / res.oe.sim$n.nc[k]
 }
 difftime(Sys.time(), start, units = "secs")
 
@@ -165,8 +168,7 @@ for(i in 1:nfam) boot.w[[i]] <- vector("list", nfam.w)
 for(i in 1:nfam){
   print(i)
   for(j in 1:nfam.w){
-    boot.w[[i]][[j]] <- mutate(oe.boot.sim(fams[[i]][[j]], CP0, ODP, af, mutations, nboot, seed = 999),
-                               FamSize = nrow(fams[[i]][[j]]))
+    boot.w[[i]][[j]] <- mutate(oe.boot.sim(fams[[i]][[j]], CP0, ODP, af, mutations, nboot, seed = 999))
   }
   boot.sum <- boot.w[[i]][[1]]
   for(l in 1:nboot){
@@ -174,7 +176,8 @@ for(i in 1:nfam){
                         boot.w[[i]][[4]][l, ]) / 4
   }
   boot.sum <- mutate(boot.sum, FamID = i, OE.C = Obs.C / Exp.C, OE.NC = Obs.NC / Exp.NC,
-                     OEdiff.C = (Obs.C - Exp.C) / FamSize, OEdiff.NC = (Obs.NC - Exp.NC) / FamSize)
+                     OEdiff.C = (Obs.C - Exp.C) / res.oe.sim$n.c[i],
+                     OEdiff.NC = (Obs.NC - Exp.NC) / res.oe.sim$n.nc[i])
   res.oe.sim.boot[[i]] <- boot.sum
 }
 difftime(Sys.time(), start, units = "secs")
@@ -261,12 +264,19 @@ ggplot(gather(mutate(res.oe.sim, Width.C = OE.C.hi - OE.C.lo,
 
 library(ashr)
 
-oe.sim.c <- oe.sim.nc <- s.oe.sim.c <- s.oe.sim.nc <- rep(NA, nfam)
+oe.sim.c <- oe.sim.nc <- s.oe.sim.c <- s.oe.sim.nc <-
+  loe.sim.c <- loe.sim.nc <- s.loe.sim.c <- s.loe.sim.nc <- rep(NA, nfam)
 for(i in 1:nfam){
   oe.sim.c[i] <- res.oe.sim$OE.C[i] - 1
   oe.sim.nc[i] <- res.oe.sim$OE.NC[i] - 1
   s.oe.sim.c[i] <- sd(res.oe.sim.boot[[i]]$OE.C)
   s.oe.sim.nc[i] <- sd(res.oe.sim.boot[[i]]$OE.NC)
+  
+  ## log
+  loe.sim.c[i] <- log(res.oe.sim$OE.C[i])
+  loe.sim.nc[i] <- log(res.oe.sim$OE.NC[i])
+  s.loe.sim.c[i] <- sd(log(res.oe.sim.boot[[i]]$OE.C))
+  s.loe.sim.nc[i] <- sd(log(res.oe.sim.boot[[i]]$OE.NC))
 }
 
 # ##### normal #####
@@ -288,6 +298,30 @@ for(i in 1:nfam){
 # sqrt(var.sim.g.norm.nc)
 # 
 # 
+
+## log
+res.sim.norm.log.c <- ash(loe.sim.c, s.loe.sim.c, mixcompdist = "normal")
+res.sim.norm.log.nc <- ash(loe.sim.nc, s.loe.sim.nc, mixcompdist = "normal")
+
+pi.sim.norm.log.c <- res.sim.norm.log.c$fitted_g$pi
+var.sim.norm.log.c <- res.sim.norm.log.c$fitted_g$sd^2
+
+pi.sim.norm.log.nc <- res.sim.norm.log.nc$fitted_g$pi
+var.sim.norm.log.nc <- res.sim.norm.log.nc$fitted_g$sd^2
+
+## var.simiances of g
+var.sim.g.norm.log.c <- sum(pi.sim.norm.log.c[-1] * var.sim.norm.log.c[-1])
+var.sim.g.norm.log.nc <- sum(pi.sim.norm.log.nc[-1] * var.sim.norm.log.nc[-1])
+
+round(c(1-pi.sim.norm.log.c[1],
+        1-pi.sim.norm.log.nc[1],
+        sqrt(var.sim.g.norm.log.c),
+        sqrt(var.sim.g.norm.log.nc)), 3)
+
+lapply(list(pi = res.sim.norm.log.c$fitted_g$pi[res.sim.norm.log.c$fitted_g$pi > 0],
+            mean = res.sim.norm.log.c$fitted_g$mean[res.sim.norm.log.c$fitted_g$pi > 0],
+            var = res.sim.norm.log.c$fitted_g$sd[res.sim.norm.log.c$fitted_g$pi > 0]^2),
+       function(x) round(x, 3))
 
 
 ##### half-uniform #####
@@ -315,6 +349,41 @@ round(c(1 - pi.sim.hu.c[1],
         1 - pi.sim.hu.nc[1],
         sqrt(var.sim.g.hu.c),
         sqrt(var.sim.g.hu.nc)), 3)
+
+lapply(list(pi = res.sim.hu.c$fitted_g$pi[res.sim.hu.c$fitted_g$pi > 0],
+            a = res.sim.hu.c$fitted_g$a[res.sim.hu.c$fitted_g$pi > 0],
+            b = res.sim.hu.c$fitted_g$b[res.sim.hu.c$fitted_g$pi > 0]),
+       function(x) round(x, 3))
+
+## log
+res.sim.hu.log.c <- ash(loe.sim.c, s.loe.sim.c, mixcompdist = "halfuniform")
+res.sim.hu.log.nc <- ash(loe.sim.nc, s.loe.sim.nc, mixcompdist = "halfuniform")
+
+pi.sim.hu.log.c <- res.sim.hu.log.c$fitted_g$pi
+mean.sim.hu.log.c <- (res.sim.hu.log.c$fitted_g$a + res.sim.hu.log.c$fitted_g$b) / 2
+var.sim.hu.log.c <- (res.sim.hu.log.c$fitted_g$b - res.sim.hu.log.c$fitted_g$a)^2 / 12
+
+pi.sim.hu.log.nc <- res.sim.hu.log.nc$fitted_g$pi
+mean.sim.hu.log.nc <- (res.sim.hu.log.nc$fitted_g$a + res.sim.hu.log.nc$fitted_g$b) / 2
+var.sim.hu.log.nc <- (res.sim.hu.log.nc$fitted_g$b - res.sim.hu.log.nc$fitted_g$a)^2 / 12
+
+## variances of g
+var.sim.g.hu.log.c <- sum(pi.sim.hu.log.c[-1] * var.sim.hu.log.c[-1]) +
+  sum(pi.sim.hu.log.c[-1] * mean.sim.hu.log.c[-1]^2) -
+  sum(pi.sim.hu.log.c[-1] * mean.sim.hu.log.c[-1])^2
+var.sim.g.hu.log.nc <- sum(pi.sim.hu.log.nc[-1] * var.sim.hu.log.nc[-1]) +
+  sum(pi.sim.hu.log.nc[-1] * mean.sim.hu.log.nc[-1]^2) -
+  sum(pi.sim.hu.log.nc[-1] * mean.sim.hu.log.nc[-1])^2
+
+round(c(1-pi.sim.hu.log.c[1],
+        1-pi.sim.hu.log.nc[1],
+        sqrt(var.sim.g.hu.log.c),
+        sqrt(var.sim.g.hu.log.nc)), 3)
+
+lapply(list(pi = res.sim.hu.log.c$fitted_g$pi[res.sim.hu.log.c$fitted_g$pi > 0],
+            a = res.sim.hu.log.c$fitted_g$a[res.sim.hu.log.c$fitted_g$pi > 0],
+            b = res.sim.hu.log.c$fitted_g$b[res.sim.hu.log.c$fitted_g$pi > 0]),
+       function(x) round(x, 3))
 
 
 ##### O-E difference #####
@@ -374,6 +443,11 @@ round(c(1 - pi.sim.diff.hu.c[1],
         1 - pi.sim.diff.hu.nc[1],
         sqrt(var.sim.diff.g.hu.c),
         sqrt(var.sim.diff.g.hu.nc)), 3)
+
+lapply(list(pi = res.sim.diff.hu.c$fitted_g$pi[res.sim.diff.hu.c$fitted_g$pi > 0],
+            a = res.sim.diff.hu.c$fitted_g$a[res.sim.diff.hu.c$fitted_g$pi > 0],
+            b = res.sim.diff.hu.c$fitted_g$b[res.sim.diff.hu.c$fitted_g$pi > 0]),
+       function(x) round(x, 3))
 
 
 save(res.oe.sim, res.oe.sim.boot, fams, boot.w, res.sim.hu.c, res.sim.hu.nc,

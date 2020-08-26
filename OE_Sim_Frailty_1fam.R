@@ -1,5 +1,5 @@
 ## O/E simulations for 1 family, not 4-family aggregates
-## Last updated: July 6, 2020
+## Last updated: August 11, 2020
 
 library(dplyr)
 library(abind)
@@ -67,13 +67,13 @@ ODP <- genOtherDeathPen(cancers,
                         age.max = 94)
 
 cnames <- c("FamID", "W", "O.C", "E.C", "OE.C", "O.NC", "E.NC",
-            "OE.NC", "OEdiff.C", "OEdiff.NC", "FamSize")
+            "OE.NC", "OEdiff.C", "OEdiff.NC", "n.c", "n.nc")
 
 
 
 #### Frailty on all family members #####
 
-load("~/Dropbox (Partners HealthCare)/BayesMendel Dropbox folders/Variation Familial Cancer Risk/OE_Sim_CNC_Main.RData")
+load("OE_Sim_CNC_Main.RData")
 
 
 res.oe.cnc.1fam <- setNames(data.frame(matrix(0, nfam, length(cnames))), cnames)
@@ -95,15 +95,16 @@ for(k in 1:nfam){
                                    counselee.id = fam$ID[i])
   }
   
-  res.oe.cnc.1fam$FamSize[k] <- nrow(fam)
+  res.oe.cnc.1fam$n.c[k] <- sum(probs[, -1])
+  res.oe.cnc.1fam$n.nc[k] <- sum(probs[, 1])
   res.oe.cnc.1fam$O.C[k] <- sum(res.obs[, -1] * probs[, -1])
   res.oe.cnc.1fam$E.C[k] <- sum(res.exp[, -1] * probs[, -1])
   res.oe.cnc.1fam$O.NC[k] <- sum(res.obs[, 1] * probs[, 1])
   res.oe.cnc.1fam$E.NC[k] <- sum(res.exp[, 1] * probs[, 1])
   res.oe.cnc.1fam$OE.C[k] <- res.oe.cnc.1fam$O.C[k] / res.oe.cnc.1fam$E.C[k]
   res.oe.cnc.1fam$OE.NC[k] <- res.oe.cnc.1fam$O.NC[k] / res.oe.cnc.1fam$E.NC[k]
-  res.oe.cnc.1fam$OEdiff.C[k] <- (res.oe.cnc.1fam$O.C[k] - res.oe.cnc.1fam$E.C[k]) / res.oe.cnc.1fam$FamSize[k]
-  res.oe.cnc.1fam$OEdiff.NC[k] <- (res.oe.cnc.1fam$O.NC[k] - res.oe.cnc.1fam$E.NC[k]) / res.oe.cnc.1fam$FamSize[k]
+  res.oe.cnc.1fam$OEdiff.C[k] <- (res.oe.cnc.1fam$O.C[k] - res.oe.cnc.1fam$E.C[k]) / res.oe.cnc.1fam$n.c[k]
+  res.oe.cnc.1fam$OEdiff.NC[k] <- (res.oe.cnc.1fam$O.NC[k] - res.oe.cnc.1fam$E.NC[k]) / res.oe.cnc.1fam$n.nc[k]
 }
 
 
@@ -116,11 +117,10 @@ set.seed(1)
 boot.w <- vector("list", nfam)
 for(k in 1:nfam){
   print(k)
-  boot.w <- mutate(oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999),
-                   FamSize = nrow(fams[[k]][[1]]))
+  boot.w <- oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999)
   
   boot.w <- mutate(boot.w, FamID = k, OE.C = Obs.C / Exp.C, OE.NC = Obs.NC / Exp.NC,
-                   OEdiff.C = (Obs.C - Exp.C) / FamSize, OEdiff.NC = (Obs.NC - Exp.NC) / FamSize)
+                   OEdiff.C = (Obs.C - Exp.C) / n.c, OEdiff.NC = (Obs.NC - Exp.NC) / n.nc)
   res.oe.cnc.1fam.boot[[k]] <- boot.w
 }
 difftime(Sys.time(), start, units = "secs")
@@ -146,7 +146,7 @@ res.oe.cnc.1fam$W <- res.oe.sim$W
 
 #### Frailty on carriers only #####
 
-load("~/Dropbox (Partners HealthCare)/BayesMendel Dropbox folders/Variation Familial Cancer Risk/OE_Sim_C_Main.RData")
+load("OE_Sim_C_Main.RData")
 
 
 res.oe.c.1fam <- setNames(data.frame(matrix(0, nfam, length(cnames))), cnames)
@@ -168,15 +168,16 @@ for(k in 1:nfam){
                                    counselee.id = fam$ID[i])
   }
   
-  res.oe.c.1fam$FamSize[k] <- nrow(fam)
+  res.oe.c.1fam$n.c[k] <- sum(probs[, -1])
+  res.oe.c.1fam$n.nc[k] <- sum(probs[, 1])
   res.oe.c.1fam$O.C[k] <- sum(res.obs[, -1] * probs[, -1])
   res.oe.c.1fam$E.C[k] <- sum(res.exp[, -1] * probs[, -1])
   res.oe.c.1fam$O.NC[k] <- sum(res.obs[, 1] * probs[, 1])
   res.oe.c.1fam$E.NC[k] <- sum(res.exp[, 1] * probs[, 1])
   res.oe.c.1fam$OE.C[k] <- res.oe.c.1fam$O.C[k] / res.oe.c.1fam$E.C[k]
   res.oe.c.1fam$OE.NC[k] <- res.oe.c.1fam$O.NC[k] / res.oe.c.1fam$E.NC[k]
-  res.oe.c.1fam$OEdiff.C[k] <- (res.oe.c.1fam$O.C[k] - res.oe.c.1fam$E.C[k]) / res.oe.c.1fam$FamSize[k]
-  res.oe.c.1fam$OEdiff.NC[k] <- (res.oe.c.1fam$O.NC[k] - res.oe.c.1fam$E.NC[k]) / res.oe.c.1fam$FamSize[k]
+  res.oe.c.1fam$OEdiff.C[k] <- (res.oe.c.1fam$O.C[k] - res.oe.c.1fam$E.C[k]) / res.oe.c.1fam$n.c[k]
+  res.oe.c.1fam$OEdiff.NC[k] <- (res.oe.c.1fam$O.NC[k] - res.oe.c.1fam$E.NC[k]) / res.oe.c.1fam$n.nc[k]
 }
 
 
@@ -189,11 +190,10 @@ set.seed(1)
 boot.w <- vector("list", nfam)
 for(k in 1:nfam){
   print(k)
-  boot.w <- mutate(oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999),
-                   FamSize = nrow(fams[[k]][[1]]))
+  boot.w <- oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999)
   
   boot.w <- mutate(boot.w, FamID = k, OE.C = Obs.C / Exp.C, OE.NC = Obs.NC / Exp.NC,
-                   OEdiff.C = (Obs.C - Exp.C) / FamSize, OEdiff.NC = (Obs.NC - Exp.NC) / FamSize)
+                   OEdiff.C = (Obs.C - Exp.C) / n.c, OEdiff.NC = (Obs.NC - Exp.NC) / n.nc)
   res.oe.c.1fam.boot[[k]] <- boot.w
 }
 difftime(Sys.time(), start, units = "secs")
@@ -218,7 +218,7 @@ res.oe.c.1fam$W <- res.oe.sim$W
 
 #### Frailty on noncarriers only #####
 
-load("~/Dropbox (Partners HealthCare)/BayesMendel Dropbox folders/Variation Familial Cancer Risk/OE_Sim_NC_Main.RData")
+load("OE_Sim_NC_Main.RData")
 
 
 res.oe.nc.1fam <- setNames(data.frame(matrix(0, nfam, length(cnames))), cnames)
@@ -240,15 +240,16 @@ for(k in 1:nfam){
                                    counselee.id = fam$ID[i])
   }
   
-  res.oe.nc.1fam$FamSize[k] <- nrow(fam)
+  res.oe.nc.1fam$n.c[k] <- sum(probs[, -1])
+  res.oe.nc.1fam$n.nc[k] <- sum(probs[, 1])
   res.oe.nc.1fam$O.C[k] <- sum(res.obs[, -1] * probs[, -1])
   res.oe.nc.1fam$E.C[k] <- sum(res.exp[, -1] * probs[, -1])
   res.oe.nc.1fam$O.NC[k] <- sum(res.obs[, 1] * probs[, 1])
   res.oe.nc.1fam$E.NC[k] <- sum(res.exp[, 1] * probs[, 1])
   res.oe.nc.1fam$OE.C[k] <- res.oe.nc.1fam$O.C[k] / res.oe.nc.1fam$E.C[k]
   res.oe.nc.1fam$OE.NC[k] <- res.oe.nc.1fam$O.NC[k] / res.oe.nc.1fam$E.NC[k]
-  res.oe.nc.1fam$OEdiff.C[k] <- (res.oe.nc.1fam$O.C[k] - res.oe.nc.1fam$E.C[k]) / res.oe.nc.1fam$FamSize[k]
-  res.oe.nc.1fam$OEdiff.NC[k] <- (res.oe.nc.1fam$O.NC[k] - res.oe.nc.1fam$E.NC[k]) / res.oe.nc.1fam$FamSize[k]
+  res.oe.nc.1fam$OEdiff.C[k] <- (res.oe.nc.1fam$O.C[k] - res.oe.nc.1fam$E.C[k]) / res.oe.nc.1fam$n.c[k]
+  res.oe.nc.1fam$OEdiff.NC[k] <- (res.oe.nc.1fam$O.NC[k] - res.oe.nc.1fam$E.NC[k]) / res.oe.nc.1fam$n.nc[k]
 }
 
 
@@ -261,11 +262,10 @@ set.seed(1)
 boot.w <- vector("list", nfam)
 for(k in 1:nfam){
   print(k)
-  boot.w <- mutate(oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999),
-                   FamSize = nrow(fams[[k]][[1]]))
+  boot.w <- oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999)
   
   boot.w <- mutate(boot.w, FamID = k, OE.C = Obs.C / Exp.C, OE.NC = Obs.NC / Exp.NC,
-                   OEdiff.C = (Obs.C - Exp.C) / FamSize, OEdiff.NC = (Obs.NC - Exp.NC) / FamSize)
+                   OEdiff.C = (Obs.C - Exp.C) / n.c, OEdiff.NC = (Obs.NC - Exp.NC) / n.nc)
   res.oe.nc.1fam.boot[[k]] <- boot.w
 }
 difftime(Sys.time(), start, units = "secs")
@@ -290,7 +290,7 @@ res.oe.nc.1fam$W <- res.oe.sim$W
 
 #### Frailty on none ####
 
-load("~/Dropbox (Partners HealthCare)/BayesMendel Dropbox folders/Variation Familial Cancer Risk/OE_Sim_None_Main.RData")
+load("OE_Sim_None_Main.RData")
 
 
 res.oe.none.1fam <- setNames(data.frame(matrix(0, nfam, length(cnames))), cnames)
@@ -312,15 +312,16 @@ for(k in 1:nfam){
                                    counselee.id = fam$ID[i])
   }
   
-  res.oe.none.1fam$FamSize[k] <- nrow(fam)
+  res.oe.none.1fam$n.c[k] <- sum(probs[, -1])
+  res.oe.none.1fam$n.nc[k] <- sum(probs[, 1])
   res.oe.none.1fam$O.C[k] <- sum(res.obs[, -1] * probs[, -1])
   res.oe.none.1fam$E.C[k] <- sum(res.exp[, -1] * probs[, -1])
   res.oe.none.1fam$O.NC[k] <- sum(res.obs[, 1] * probs[, 1])
   res.oe.none.1fam$E.NC[k] <- sum(res.exp[, 1] * probs[, 1])
   res.oe.none.1fam$OE.C[k] <- res.oe.none.1fam$O.C[k] / res.oe.none.1fam$E.C[k]
   res.oe.none.1fam$OE.NC[k] <- res.oe.none.1fam$O.NC[k] / res.oe.none.1fam$E.NC[k]
-  res.oe.none.1fam$OEdiff.C[k] <- (res.oe.none.1fam$O.C[k] - res.oe.none.1fam$E.C[k]) / res.oe.none.1fam$FamSize[k]
-  res.oe.none.1fam$OEdiff.NC[k] <- (res.oe.none.1fam$O.NC[k] - res.oe.none.1fam$E.NC[k]) / res.oe.none.1fam$FamSize[k]
+  res.oe.none.1fam$OEdiff.C[k] <- (res.oe.none.1fam$O.C[k] - res.oe.none.1fam$E.C[k]) / res.oe.none.1fam$n.c[k]
+  res.oe.none.1fam$OEdiff.NC[k] <- (res.oe.none.1fam$O.NC[k] - res.oe.none.1fam$E.NC[k]) / res.oe.none.1fam$n.nc[k]
 }
 
 
@@ -333,11 +334,10 @@ set.seed(1)
 boot.w <- vector("list", nfam)
 for(k in 1:nfam){
   print(k)
-  boot.w <- mutate(oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999),
-                   FamSize = nrow(fams[[k]][[1]]))
+  boot.w <- oe.boot.sim(fams[[k]][[1]], CP0, ODP, af, mutations, nboot, seed = 999)
   
   boot.w <- mutate(boot.w, FamID = k, OE.C = Obs.C / Exp.C, OE.NC = Obs.NC / Exp.NC,
-                   OEdiff.C = (Obs.C - Exp.C) / FamSize, OEdiff.NC = (Obs.NC - Exp.NC) / FamSize)
+                   OEdiff.C = (Obs.C - Exp.C) / n.c, OEdiff.NC = (Obs.NC - Exp.NC) / n.nc)
   res.oe.none.1fam.boot[[k]] <- boot.w
 }
 difftime(Sys.time(), start, units = "secs")
@@ -416,6 +416,80 @@ for(i in 1:nfam){
 
 res.sim.diff.hu.c <- ash(oediff.cnc.c, s.oediff.cnc.c, mixcompdist = "halfuniform")
 res.sim.diff.hu.nc <- ash(oediff.cnc.nc, s.oediff.cnc.nc, mixcompdist = "halfuniform")
+
+pi.sim.diff.hu.c <- res.sim.diff.hu.c$fitted_g$pi
+mean.sim.diff.hu.c <- (res.sim.diff.hu.c$fitted_g$a + res.sim.diff.hu.c$fitted_g$b) / 2
+var.sim.diff.hu.c <- (res.sim.diff.hu.c$fitted_g$b - res.sim.diff.hu.c$fitted_g$a)^2 / 12
+
+pi.sim.diff.hu.nc <- res.sim.diff.hu.nc$fitted_g$pi
+mean.sim.diff.hu.nc <- (res.sim.diff.hu.nc$fitted_g$a + res.sim.diff.hu.nc$fitted_g$b) / 2
+var.sim.diff.hu.nc <- (res.sim.diff.hu.nc$fitted_g$b - res.sim.diff.hu.nc$fitted_g$a)^2 / 12
+
+## variances of g
+var.sim.diff.g.hu.c <- sum(pi.sim.diff.hu.c[-1] * var.sim.diff.hu.c[-1]) +
+  sum(pi.sim.diff.hu.c[-1] * mean.sim.diff.hu.c[-1]^2) -
+  sum(pi.sim.diff.hu.c[-1] * mean.sim.diff.hu.c[-1])^2
+var.sim.diff.g.hu.nc <- sum(pi.sim.diff.hu.nc[-1] * var.sim.diff.hu.nc[-1]) +
+  sum(pi.sim.diff.hu.nc[-1] * mean.sim.diff.hu.nc[-1]^2) -
+  sum(pi.sim.diff.hu.nc[-1] * mean.sim.diff.hu.nc[-1])^2
+
+round(c(1-pi.sim.diff.hu.c[1],
+        1-pi.sim.diff.hu.nc[1],
+        sqrt(var.sim.diff.g.hu.c),
+        sqrt(var.sim.diff.g.hu.nc)), 3)
+
+## Frailty model on carriers ##
+
+oe.c.c <- oe.c.nc <- s.oe.c.c <- s.oe.c.nc <- rep(NA, nfam)
+for(i in 1:nfam){
+  oe.c.c[i] <- res.oe.c.1fam$OE.C[i] - 1
+  oe.c.nc[i] <- res.oe.c.1fam$OE.NC[i] - 1
+  s.oe.c.c[i] <- sd(res.oe.c.1fam.boot[[i]]$OE.C)
+  s.oe.c.nc[i] <- sd(res.oe.c.1fam.boot[[i]]$OE.NC)
+}
+
+
+##### half-uniform #####
+
+res.sim.hu.c <- ash(oe.c.c, s.oe.c.c, mixcompdist = "halfuniform")
+res.sim.hu.nc <- ash(oe.c.nc, s.oe.c.nc, mixcompdist = "halfuniform")
+
+pi.sim.hu.c <- res.sim.hu.c$fitted_g$pi
+mean.sim.hu.c <- (res.sim.hu.c$fitted_g$a + res.sim.hu.c$fitted_g$b) / 2
+var.sim.hu.c <- (res.sim.hu.c$fitted_g$b - res.sim.hu.c$fitted_g$a)^2 / 12
+
+pi.sim.hu.nc <- res.sim.hu.nc$fitted_g$pi
+mean.sim.hu.nc <- (res.sim.hu.nc$fitted_g$a + res.sim.hu.nc$fitted_g$b) / 2
+var.sim.hu.nc <- (res.sim.hu.nc$fitted_g$b - res.sim.hu.nc$fitted_g$a)^2 / 12
+
+## variances of g
+var.sim.g.hu.c <- sum(pi.sim.hu.c[-1] * var.sim.hu.c[-1]) +
+  sum(pi.sim.hu.c[-1] * mean.sim.hu.c[-1]^2) -
+  sum(pi.sim.hu.c[-1] * mean.sim.hu.c[-1])^2
+var.sim.g.hu.nc <- sum(pi.sim.hu.nc[-1] * var.sim.hu.nc[-1]) +
+  sum(pi.sim.hu.nc[-1] * mean.sim.hu.nc[-1]^2) -
+  sum(pi.sim.hu.nc[-1] * mean.sim.hu.nc[-1])^2
+
+round(c(1-pi.sim.hu.c[1],
+        1-pi.sim.hu.nc[1],
+        sqrt(var.sim.g.hu.c),
+        sqrt(var.sim.g.hu.nc)), 3)
+
+
+##### O-E difference #####
+
+oediff.c.c <- oediff.c.nc <- s.oediff.c.c <- s.oediff.c.nc <- rep(NA, nfam)
+for(i in 1:nfam){
+  oediff.c.c[i] <- res.oe.c.1fam$OEdiff.C[i]
+  oediff.c.nc[i] <- res.oe.c.1fam$OEdiff.NC[i]
+  s.oediff.c.c[i] <- sd(res.oe.c.1fam.boot[[i]]$OEdiff.C)
+  s.oediff.c.nc[i] <- sd(res.oe.c.1fam.boot[[i]]$OEdiff.NC)
+}
+
+##### half-uniform #####
+
+res.sim.diff.hu.c <- ash(oediff.c.c, s.oediff.c.c, mixcompdist = "halfuniform")
+res.sim.diff.hu.nc <- ash(oediff.c.nc, s.oediff.c.nc, mixcompdist = "halfuniform")
 
 pi.sim.diff.hu.c <- res.sim.diff.hu.c$fitted_g$pi
 mean.sim.diff.hu.c <- (res.sim.diff.hu.c$fitted_g$a + res.sim.diff.hu.c$fitted_g$b) / 2
